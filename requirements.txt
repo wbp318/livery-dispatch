@@ -1,0 +1,7 @@
+# Runtime deps (the only ones the production image installs):
+-r requirements-runtime.txt
+
+# Dev + CI tools: tests, static security analysis, dependency CVE scan.
+pytest>=8.3
+bandit>=1.7
+pip-audit>=2.7

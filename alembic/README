@@ -1,0 +1,17 @@
+Alembic migrations for the dispatch backend (landed v1.0.12).
+
+env.py reads DATABASE_URL from the environment so the same migration
+scripts apply to SQLite (local dev + Fly.io SQLite-on-volume) and Postgres
+(future production scale-up). target_metadata = Base.metadata so
+autogenerate diffs against the ORM definitions in models.py.
+
+# Common commands (run from the repository root, with DATABASE_URL set):
+#
+#   alembic upgrade head                                  # apply all pending
+#   alembic downgrade -1                                  # one step back
+#   alembic revision --autogenerate -m "describe_change"  # new migration
+#   alembic current                                       # what's applied
+#   alembic history                                       # full timeline
+#   alembic stamp <revision>                              # mark applied w/o running
+
+The canonical operator runbook is in ../DEPLOY.md § "5. Database migrations".

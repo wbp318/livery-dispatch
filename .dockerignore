@@ -1,0 +1,18 @@
+# Only what runs goes into the image. tests/test_deploy_config.py checks
+# that every top-level module and alembic/ still make it in.
+tests/
+osrm/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+*.db
+*.db-*
+.e2e_test.db*
+.env
+.env.*
+*.log
+*.md
+PRESENTATION.html
+Dockerfile
+.dockerignore
+fly.toml

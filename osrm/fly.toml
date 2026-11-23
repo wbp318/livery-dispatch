@@ -1,0 +1,36 @@
+# Fly.io app for the self-hosted corridor OSRM (v1.1.15).
+# Private-only: no public IPs. The dispatch app reaches it over Flycast at
+#   http://livery-osrm.flycast
+# and that URL becomes the dispatch app's OSRM_BASE_URL. Full runbook:
+# osrm/README.md.
+
+app = "livery-osrm"
+primary_region = "atl"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 5000
+  # Flycast is plain HTTP on Fly's private network (WireGuard-encrypted
+  # between machines), so don't redirect to HTTPS.
+  force_https = false
+  # Keep one machine warm: a cold start is slower than the dispatch proxy's
+  # OSRM_TIMEOUT_S (5s), which would show straight lines on the first map
+  # load after idle. A 512 MB shared-cpu machine is a few dollars a month.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "60s"
+    timeout = "5s"
+    method = "GET"
+    # JAX -> Cloister; 200 only if the graph loaded and can route.
+    path = "/route/v1/driving/-81.6879,30.4941;-81.3438,31.1969?overview=false"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

@@ -1,0 +1,10 @@
+[project]
+name = "livery-dispatch"
+version = "0.1.0"
+description = "Dispatch system for a premium car service"
+requires-python = ">=3.10"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

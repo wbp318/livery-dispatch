@@ -1,0 +1,59 @@
+# Fly.io app for the dispatch backend (v1.1.21). From the repository root:
+#
+#   flyctl deploy --ha=false
+#
+# Runbook: DEPLOY.md. The image (Dockerfile) already sets
+# DISPATCH_ENV=production and DATABASE_URL=sqlite:////data/dispatch.db;
+# tests/test_deploy_config.py pins this file against it.
+
+app = "livery-dispatch"
+primary_region = "atl"
+
+[build]
+  dockerfile = "Dockerfile"
+
+# Non-secret settings, reviewed in git. Secrets (admin hash, session + CSRF
+# secrets, Twilio credentials, CORS_ORIGINS, PUBLIC_BASE_URL, ...) go in with
+# `flyctl secrets set` (DEPLOY.md § 4). Don't set these four as secrets too.
+[env]
+  # Fly's edge sets this to the real client address; every per-IP rate
+  # limit keys on it (v1.1.17, E5).
+  CLIENT_IP_HEADER = "Fly-Client-IP"
+  # The boot guard refuses `console` in production.
+  NOTIFICATION_PROVIDER = "twilio"
+
+# SQLite lives on this volume. Run ONE machine: a second machine would get its
+# own volume and therefore its own database. That is why the deploy command
+# says --ha=false. Create the volume once:
+#   flyctl volumes create dispatch_data --region atl --size 1
+#
+# Fly snapshots the volume daily and stores the snapshots off the volume. Keep
+# 30 days of them (Fly's default is 5, its maximum 60); with the copy boot.py
+# makes before each migration and `python backup.py`, that's the backup
+# posture in DEPLOY.md, "Backups" (v1.4.1).
+[mounts]
+  source = "dispatch_data"
+  destination = "/data"
+  snapshot_retention = 30
+  scheduled_snapshots = true
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Dispatch answers inbound calls, SMS webhooks and driver GPS heartbeats
+  # at any hour, so the one machine stays running.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    timeout = "5s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
